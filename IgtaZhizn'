@@ -1,0 +1,175 @@
+#include "pch.h"
+#include <iostream>
+#include <cstdlib>
+#include <io.h>
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <windows.h>
+
+using namespace std;
+
+const int UniverseSize = 25; //размер сетки
+
+void printUniverse(bool Universe1[UniverseSize + 1][UniverseSize + 1]);
+void determineState(bool Universe1[UniverseSize + 1][UniverseSize + 1]); //определение положения клеток
+void clearScreen(void);//очистка экрана
+
+int main() {
+
+	
+	bool Universe1[UniverseSize + 1][UniverseSize + 1] = {};
+	int x, y,n;
+	string nc;
+	string start;
+	string filename;
+	
+	cout << "Enter the number of cells, or 'r' to read cells from file: ";
+	cin >> nc;
+	cout << endl;
+
+	if (nc == "r") //начало чтиения с файла координат живых клеток
+	{
+		while (true)
+		{
+
+			cout << "Enter name of file to read from: " << endl;
+			cin >> filename;
+
+			ifstream readfile(filename);
+			if (readfile.is_open())
+			{
+				string fileline, xx, yy;
+
+				while (getline(readfile, fileline))
+				{
+					stringstream ss(fileline);
+
+					getline(ss, xx, ' ');
+					getline(ss, yy, ' ');
+
+					x = stoi(xx);
+					y = stoi(yy);
+
+					Universe1[x][y] = true;
+				}
+				break;
+			}
+			else {
+				cout << "No such file, try again." << endl;
+			}
+		}
+	}
+	else
+	{
+
+		for (int i = 0; i < stoi(nc); i++) //распознавание координат, введенных пользователем
+		{
+			cout << stoi(nc) << "Enter the coordinates of cell " << i + 1 << " : ";
+			cin >> x >> y;
+			Universe1[x][y] = true;
+			printUniverse(Universe1);
+		}
+	}
+	cout << "Start the game ? (y/n)" << endl;
+	printUniverse(Universe1);
+	cin >> start;
+	if (start == "y" || start == "Y")
+	{
+		while (true)
+		{
+			printUniverse(Universe1);
+			determineState(Universe1);
+			Sleep(50);
+			clearScreen();
+		}
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+void clearScreen(void) { //очистка экрана
+	
+#if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__) || defined(__BORLANDC__) //для Виндоуса
+#define OS_WIN
+#endif
+
+#ifdef OS_WIN
+	system("CLS");
+#endif
+
+//#if defined(linux) || defined(__CYGWIN__) //для Линукс-подобных систем
+//	system("clear");
+//#endif
+}
+
+void printUniverse(bool Universe1[UniverseSize + 1][UniverseSize + 1]) { //процесс создания вселенной с живыми/мертвыми клетками
+	for (int a = 1; a < UniverseSize; a++)
+	{
+		for (int b = 1; b < UniverseSize; b++)
+		{
+			if (Universe1[a][b] == true)
+			{
+				cout << " O "; //ожившая клетка
+			}
+			else
+			{
+				cout << " . ";//мертвая клетка
+			}
+			if (b == UniverseSize - 1)
+			{
+				cout << endl;
+			}
+		}
+	}
+}
+
+void compareUniverse(bool Universe1[UniverseSize + 1][UniverseSize + 1], bool Universe2[UniverseSize + 1][UniverseSize + 1]) {//сравнение игровых сеток 
+	for (int a = 0; a < UniverseSize; a++)
+	{
+		for (int b = 0; b < UniverseSize; b++)
+		{
+			Universe2[a][b] = Universe1[a][b];
+		}
+	}
+}
+
+void determineState(bool Universe1[UniverseSize + 1][UniverseSize + 1]) { // происходит определение мертвых и живых точек; процедура рождения и смерти клеток
+	bool Universe2[UniverseSize + 1][UniverseSize + 1] = {};
+	compareUniverse(Universe1, Universe2);
+
+	for (int a = 1; a < UniverseSize; a++)//оживление клеток 
+	{
+		for (int b = 1; b < UniverseSize; b++)
+		{
+			int alive = 0;
+			for (int c = -1; c < 2; c++)
+			{
+				for (int d = -1; d < 2; d++)
+				{
+					if (!(c == 0 && d == 0))
+					{
+						if (Universe2[a + c][b + d])
+						{
+							++alive;
+						}
+					}
+				}
+			}
+			if (alive < 2) //если вокруг живых клеток меньше 2, то она умирает
+			{
+				Universe1[a][b] = false;
+			}
+			else if (alive == 3) //если вокруг три живые клетки, то живет 
+			{
+				Universe1[a][b] = true;
+			}
+			else if (alive > 3)// если вокруг живых - больше трех, то клетка умирает
+			{
+				Universe1[a][b] = false;
+			}
+		}
+	}
+}
